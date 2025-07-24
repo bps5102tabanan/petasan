@@ -33,7 +33,8 @@ type InformasiSLS = {
 type ChartRow = {
   code: string;
   name: string;
-  selesai: number;
+  approve?: number;
+  submit?: number;
   proses: number;
   belum: number;
 };
@@ -92,41 +93,44 @@ export default function DashboardWithChartAndScheduler() {
 
   // ✅ Data untuk Bar Chart
   const chartData: ChartRow[] = useMemo(() => {
-    const makeRow = (name: string, selesai: number, proses: number, belum: number, total: number) => ({
+    const makeRow = (name: string, approve: number, submit: number, proses: number, belum: number, total: number) => ({
       name,
       code: name,
-      selesai: (selesai / total) * 100,
+      approve: (approve / total) * 100,
+      submit: (submit / total) * 100,
       proses: (proses / total) * 100,
       belum: (belum / total) * 100,
     });
 
     if (filterKecamatan) {
-      const desaMap: Record<string, { selesai: number; proses: number; belum: number; total: number }> = {};
+      const desaMap: Record<string, { approve: number, submit: number; proses: number; belum: number; total: number }> = {};
       filteredData.forEach((row) => {
         const code = getIdDesa(row.id);
-        if (!desaMap[code]) desaMap[code] = { selesai: 0, proses: 0, belum: 0, total: 0 };
+        if (!desaMap[code]) desaMap[code] = { approve: 0, submit:0, proses: 0, belum: 0, total: 0 };
         desaMap[code].total++;
-        if (row.status === "Selesai") desaMap[code].selesai++;
+        if (row.status === "Approve") desaMap[code].approve++;
+        else if (row.status === "Submit") desaMap[code].submit++;
         else if (row.status === "Proses") desaMap[code].proses++;
         else desaMap[code].belum++;
       });
 
       return Object.entries(desaMap).map(([code, v]) =>
-        makeRow(filteredData.find((d) => getIdDesa(d.id) === code)?.desa || code, v.selesai, v.proses, v.belum, v.total)
+        makeRow(filteredData.find((d) => getIdDesa(d.id) === code)?.desa || code, v.approve, v.submit, v.proses, v.belum, v.total)
       );
     } else {
-      const kecMap: Record<string, { selesai: number; proses: number; belum: number; total: number }> = {};
+      const kecMap: Record<string, { approve: number, submit: number; proses: number; belum: number; total: number }> = {};
       data.forEach((row) => {
         const code = getIdKec(row.id);
-        if (!kecMap[code]) kecMap[code] = { selesai: 0, proses: 0, belum: 0, total: 0 };
+        if (!kecMap[code]) kecMap[code] = { approve: 0, submit:0, proses: 0, belum: 0, total: 0 };
         kecMap[code].total++;
-        if (row.status === "Selesai") kecMap[code].selesai++;
+        if (row.status === "Approve") kecMap[code].approve++;
+        else if (row.status === "Submit") kecMap[code].submit++;
         else if (row.status === "Proses") kecMap[code].proses++;
         else kecMap[code].belum++;
       });
 
       return Object.entries(kecMap).map(([code, v]) =>
-        makeRow(data.find((d) => getIdKec(d.id) === code)?.kecamatan || code, v.selesai, v.proses, v.belum, v.total)
+        makeRow(data.find((d) => getIdKec(d.id) === code)?.kecamatan || code, v.approve, v.submit, v.proses, v.belum, v.total)
       );
     }
   }, [data, filteredData, filterKecamatan]);
@@ -179,23 +183,23 @@ export default function DashboardWithChartAndScheduler() {
         const start = new Date(row.tgl_awal);
         const end = new Date(row.tgl_akhir);
 
-        if (!isNaN(start.getTime()) && !isNaN(end.getTime())) {
-          groupMap[key].data.push({
-            id: row.id,
-            startDate: start,
-            endDate: end,
-            title: row.sls ?? "Tanpa Nama SLS",
-            subtitle: `${row.pemeta || "-"} - ${row.kecamatan || ""} ${row.desa || ""}`.trim(),
-            description: row.status ?? "-",
-            occupancy: 0,
-            bgColor:
-              row.status === "Selesai"
-                ? "rgb(34,197,94)"
-                : row.status === "Proses"
-                ? "rgb(234,179,8)"
-                : "rgb(239,68,68)"
-          });
-        }
+        const statusColorMap: Record<string, string> = {
+          Belum: "rgb(239,68,68)",    // merah
+          Proses: "rgb(234,179,8)",   // kuning
+          Submit: "rgb(59,130,246)",  // biru
+          Approve: "rgb(16,185,129)", // hijau
+        };
+
+        groupMap[key].data.push({
+          id: row.id,
+          startDate: start,
+          endDate: end,
+          title: row.sls ?? "Tanpa Nama SLS",
+          subtitle: `${row.pemeta || "-"} - ${row.kecamatan || ""} ${row.desa || ""}`.trim(),
+          description: row.status ?? "-",
+          occupancy: 0,
+          bgColor: statusColorMap[row.status ?? "Belum"] ?? "rgb(107,114,128)", // default abu-abu
+        });
       }
     });
 
@@ -248,7 +252,8 @@ export default function DashboardWithChartAndScheduler() {
                 }}
               />
               <Legend />
-              <Bar dataKey="selesai" stackId="a" fill="#22c55e" name="Selesai" />
+              <Bar dataKey="approve" stackId="a" fill="#10b981" name="Approve" />
+              <Bar dataKey="submit" stackId="a" fill="#3b82f6" name="Submit" />
               <Bar dataKey="proses" stackId="a" fill="#eab308" name="Proses" />
               <Bar dataKey="belum" stackId="a" fill="#ef4444" name="Belum" />
             </BarChart>

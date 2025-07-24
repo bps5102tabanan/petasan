@@ -266,38 +266,79 @@ export default function ModalEdit({ data, onClose, onSave }: ModalEditProps) {
               >
                 <option value="Belum">Belum</option>
                 <option value="Proses">Proses</option>
-                <option value="Selesai">Selesai</option>
+                <option value="Selesai">Submit</option>
+                <option value="Approve">Approve</option>
               </select>
             </div>
 
             <div className="grid grid-cols-2 gap-4">
               <div>
-                <label className="text-sm font-medium text-gray-700">
-                  Jumlah Sub
-                </label>
-                <input
-                  type="number"
-                  min={0}
-                  value={formData.jumlah_sub ?? ""}
-                  onChange={(e) =>
-                    handleChange("jumlah_sub", Number(e.target.value))
-                  }
-                  className="w-full mt-1 rounded-lg border border-gray-300 text-gray-800 px-3 py-2 text-sm focus:ring-2 focus:ring-blue-400"
-                />
+                <label className="text-sm font-medium text-gray-700">Jumlah Sub</label>
+                <div className="mt-1 flex rounded-md border border-gray-300 bg-white overflow-hidden h-10">
+                  {/* Tombol minus */}
+                  <button
+                    type="button"
+                    onClick={() =>
+                      handleChange(
+                        "jumlah_sub",
+                        Math.max(0, (formData.jumlah_sub ?? 0) - 1)
+                      )
+                    }
+                    className="w-10 flex items-center justify-center text-gray-600 hover:bg-gray-100"
+                  >
+                    –
+                  </button>
+
+                  {/* Angka di tengah */}
+                  <div className="flex-1 flex items-center justify-center text-sm text-gray-800">
+                    {formData.jumlah_sub ?? 0}
+                  </div>
+
+                  {/* Tombol plus */}
+                  <button
+                    type="button"
+                    onClick={() =>
+                      handleChange("jumlah_sub", (formData.jumlah_sub ?? 0) + 1)
+                    }
+                    className="w-10 flex items-center justify-center text-gray-600 hover:bg-gray-100"
+                  >
+                    +
+                  </button>
+                </div>
               </div>
               <div>
-                <label className="text-sm font-medium text-gray-700">
-                  Jumlah Segmen
-                </label>
-                <input
-                  type="number"
-                  min={0}
-                  value={formData.jumlah_segmen ?? ""}
-                  onChange={(e) =>
-                    handleChange("jumlah_segmen", Number(e.target.value))
-                  }
-                  className="w-full mt-1 rounded-lg border border-gray-300 text-gray-800 px-3 py-2 text-sm focus:ring-2 focus:ring-blue-400"
-                />
+                <label className="text-sm font-medium text-gray-700">Jumlah Segmen</label>
+                <div className="mt-1 flex rounded-md border border-gray-300 bg-white overflow-hidden h-10">
+                  {/* Tombol minus */}
+                  <button
+                    type="button"
+                    onClick={() =>
+                      handleChange(
+                        "jumlah_segmen",
+                        Math.max(0, (formData.jumlah_segmen ?? 0) - 1)
+                      )
+                    }
+                    className="w-10 flex items-center justify-center text-gray-600 hover:bg-gray-100"
+                  >
+                    –
+                  </button>
+
+                  {/* Angka di tengah */}
+                  <div className="flex-1 flex items-center justify-center text-sm text-gray-800">
+                    {formData.jumlah_segmen ?? 0}
+                  </div>
+
+                  {/* Tombol plus */}
+                  <button
+                    type="button"
+                    onClick={() =>
+                      handleChange("jumlah_segmen", (formData.jumlah_segmen ?? 0) + 1)
+                    }
+                    className="w-10 flex items-center justify-center text-gray-600 hover:bg-gray-100"
+                  >
+                    +
+                  </button>
+                </div>
               </div>
             </div>
 

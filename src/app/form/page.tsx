@@ -14,7 +14,9 @@ const getStatusColor = (status: string) => {
       return "bg-red-100 text-red-700";
     case "Proses":
       return "bg-yellow-100 text-yellow-700";
-    case "Selesai":
+    case "Submit":
+      return "bg-blue-100 text-blue-700";
+    case "Approve":
       return "bg-green-100 text-green-700";
     default:
       return "bg-gray-100 text-gray-600";
