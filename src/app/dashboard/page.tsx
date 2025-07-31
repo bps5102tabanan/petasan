@@ -28,6 +28,7 @@ type InformasiSLS = {
   jumlah_segmen?: number;
   tgl_awal?: string;
   tgl_akhir?: string;
+  catatan?: string;
 };
 
 type ChartRow = {
@@ -195,7 +196,13 @@ export default function DashboardWithChartAndScheduler() {
           startDate: start,
           endDate: end,
           title: row.sls ?? "Tanpa Nama SLS",
-          subtitle: `${row.pemeta || "-"} - ${row.kecamatan || ""} ${row.desa || ""}`.trim(),
+          subtitle: [
+            `Pemeriksa     : ${row.pemeriksa || "-"}`,
+            `Pemeta        : ${row.pemeta || "-"}`,
+            `Jumlah Sub    : ${row.jumlah_sub || 0}`,
+            `Jumlah Segmen : ${row.jumlah_segmen || 0}`,
+            `Catatan       : ${row.catatan || "-"}`,
+          ].join("\n"),
           description: row.status ?? "-",
           occupancy: 0,
           bgColor: statusColorMap[row.status ?? "Belum"] ?? "rgb(107,114,128)", // default abu-abu
@@ -203,7 +210,11 @@ export default function DashboardWithChartAndScheduler() {
       }
     });
 
-    return Object.values(groupMap);
+    return Object.values(groupMap).sort((a, b) => {
+      const aStart = a.data[0]?.startDate ? new Date(a.data[0].startDate).getTime() : Infinity;
+      const bStart = b.data[0]?.startDate ? new Date(b.data[0].startDate).getTime() : Infinity;
+      return aStart - bStart;
+    });
   }, [appliedFilter, data]);
 
   return (
@@ -317,13 +328,15 @@ export default function DashboardWithChartAndScheduler() {
               <Scheduler
                 data={schedulerData}
                 isLoading={isLoading}
-                onTileClick={(row) => console.log("Row clicked:", row)}
-                onItemClick={(item) => alert(`📌 ${item.label}`)}
+                onTileClick={(item) => alert(`${item.subtitle}`)}
+                
                 config={{
-                  zoom: 0,
+                  zoom: 1,
                   maxRecordsPerPage: 15,
                   includeTakenHoursOnWeekendsInDayView: true,
-                  showTooltip: true,
+                  showTooltip: false,
+                  filterButtonState: -1,
+                  
                 }}
               />
             </StyledSchedulerFrame>

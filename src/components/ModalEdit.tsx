@@ -14,6 +14,7 @@ export type InformasiSLS = {
   jumlah_segmen?: number;
   tgl_awal?: string;
   tgl_akhir?: string;
+  catatan?: string;
 };
 
 export type SegmenRow = {
@@ -241,6 +242,8 @@ export default function ModalEdit({ data, onClose, onSave }: ModalEditProps) {
                   type="date"
                   value={formData.tgl_awal ?? ""}
                   onChange={(e) => handleChange("tgl_awal", e.target.value)}
+                  min="2025-07-25"
+                  max="2025-08-31"
                   className="w-full mt-1 rounded-md border border-gray-300 text-black px-3 py-2 text-sm focus:ring-2 focus:ring-blue-400"
                 />
               </div>
@@ -252,6 +255,8 @@ export default function ModalEdit({ data, onClose, onSave }: ModalEditProps) {
                   type="date"
                   value={formData.tgl_akhir ?? ""}
                   onChange={(e) => handleChange("tgl_akhir", e.target.value)}
+                  min="2025-07-25"
+                  max="2025-08-31"
                   className="w-full mt-1 rounded-md border border-gray-300 text-black px-3 py-2 text-sm focus:ring-2 focus:ring-blue-400"
                 />
               </div>
@@ -266,7 +271,7 @@ export default function ModalEdit({ data, onClose, onSave }: ModalEditProps) {
               >
                 <option value="Belum">Belum</option>
                 <option value="Proses">Proses</option>
-                <option value="Selesai">Submit</option>
+                <option value="Submit">Submit</option>
                 <option value="Approve">Approve</option>
               </select>
             </div>
@@ -340,7 +345,18 @@ export default function ModalEdit({ data, onClose, onSave }: ModalEditProps) {
                   </button>
                 </div>
               </div>
+              
             </div>
+            <div>
+                <label className="text-sm font-medium text-gray-700">Catatan</label>
+                <textarea
+                  value={formData.catatan ?? ""}
+                  onChange={(e) => handleChange("catatan", e.target.value)}
+                  rows={3}
+                  placeholder="Tulis catatan tambahan di sini..."
+                  className="w-full mt-1 rounded-md border border-gray-300 text-gray-800 text-sm px-3 py-2"
+                />
+              </div>
 
             {isInvalidJumlah && (
               <p className="text-red-500 text-sm mt-1">

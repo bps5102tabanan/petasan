@@ -115,6 +115,7 @@ export default function FormPage() {
           jumlah_segmen: updated.jumlah_segmen,
           tgl_awal: updated.tgl_awal,
           tgl_akhir: updated.tgl_akhir,
+          catatan: updated.catatan,
         })
         .eq("id", updated.id);
 
