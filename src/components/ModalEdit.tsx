@@ -15,6 +15,7 @@ export type InformasiSLS = {
   tgl_awal?: string;
   tgl_akhir?: string;
   catatan?: string;
+  link?: string | null;
 };
 
 export type SegmenRow = {

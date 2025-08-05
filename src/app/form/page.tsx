@@ -51,6 +51,7 @@ export default function FormPage() {
   const [editRow, setEditRow] = useState<InformasiSLS | null>(null);
 
   // ✅ Ambil data utama dari Supabase
+  /*
   const fetchData = async () => {
     const { data, error } = await supabase
       .from("informasiSLS")
@@ -64,6 +65,37 @@ export default function FormPage() {
 
     setData(data as InformasiSLS[]);
     setFiltered(data as InformasiSLS[]);
+  };
+  */
+
+  const fetchData = async () => {
+    const { data: informasiData, error: infoError } = await supabase
+      .from("informasiSLS")
+      .select("*")
+      .order("id", { ascending: true });
+
+    const { data: linksData, error: linksError } = await supabase
+      .from("sls_links")
+      .select("idsls, link");
+
+    if (infoError || linksError) {
+      console.error("❌ Gagal ambil data:");
+      if (infoError) console.error("InformasiSLS:", infoError.message);
+      if (linksError) console.error("SLS Links:", linksError.message);
+      return;
+    }
+
+    // Gabungkan data secara manual berdasarkan id
+    const withLink = informasiData.map((item) => {
+      const linkObj = linksData.find((link) => link.idsls === item.id);
+      return {
+        ...item,
+        link: linkObj?.link ?? null,
+      };
+    });
+
+    setData(withLink);
+    setFiltered(withLink);
   };
 
   // ✅ Pertama kali ambil data
@@ -287,6 +319,7 @@ export default function FormPage() {
                 <th className="px-4 py-3">Status</th>
                 <th className="px-4 py-3 text-center">Sub</th>
                 <th className="px-4 py-3 text-center">Segmen</th>
+                <th className="px-4 py-3 text-center">Link</th>
                 <th className="px-4 py-3 text-center">Action</th>
               </tr>
             </thead>
@@ -307,6 +340,20 @@ export default function FormPage() {
                   </td>
                   <td className="px-4 py-3 text-center">{row.jumlah_sub}</td>
                   <td className="px-4 py-3 text-center">{row.jumlah_segmen}</td>
+                  <td className="px-4 py-3">
+                    {row.link ? (
+                      <a
+                        href={row.link}
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        className="text-blue-600 underline text-xs"
+                      >
+                        Link
+                      </a>
+                    ) : (
+                      <span className="text-gray-400 italic text-xs">-</span>
+                    )}
+                  </td>
                   <td className="px-4 py-3 flex gap-2 justify-center">
                     <button
                       onClick={() => setSelectedRow(row)}

@@ -15,6 +15,14 @@ import {
   ResponsiveContainer,
 } from "recharts";
 import { supabase } from "@/lib/supabaseClient";
+import dayjs from "dayjs";
+import timezone from "dayjs/plugin/timezone";
+import utc from "dayjs/plugin/utc";
+
+dayjs.extend(utc);
+dayjs.extend(timezone);
+
+const now = dayjs().tz("Asia/Makassar").startOf("day");
 
 type InformasiSLS = {
   id: string;
@@ -217,6 +225,37 @@ export default function DashboardWithChartAndScheduler() {
     });
   }, [appliedFilter, data]);
 
+  // Hitung target dan realisasi per kecamatan
+const rekapKecamatan = useMemo(() => {
+  const kecMap: Record<string, { name: string; target: number; realisasi: number }> = {};
+
+  data.forEach((row) => {
+    const kode = getIdKec(row.id);
+    const nama = row.kecamatan || kode;
+
+    if (!kecMap[kode]) {
+      kecMap[kode] = { name: nama, target: 0, realisasi: 0 };
+    }
+
+    // ✅ Hitung target: tgl_akhir ≤ hari ini (UTC+8)
+    if (
+      row.tgl_akhir &&
+      (dayjs(row.tgl_akhir).isSame(now) || dayjs(row.tgl_akhir).isBefore(now))
+    ) {
+      kecMap[kode].target += 1;
+    }
+
+    // ✅ Hitung realisasi: status === Approve
+    if (row.status === "Approve") {
+      kecMap[kode].realisasi += 1;
+    }
+  });
+
+  return Object.entries(kecMap)
+    .sort(([a], [b]) => parseInt(a) - parseInt(b))
+    .map(([code, v]) => ({ code, ...v }));
+}, [data]);
+
   return (
     <main className="flex flex-col items-center bg-gray-50 p-6 space-y-8 min-h-screen">
       <div className="max-w-6xl w-full bg-white shadow-lg rounded-2xl p-6 space-y-6">
@@ -270,6 +309,33 @@ export default function DashboardWithChartAndScheduler() {
             </BarChart>
           </ResponsiveContainer>
         </div>
+
+        {/* === Tabel Rekap Target dan Realisasi === */}
+        {/*}
+        
+        <div className="overflow-x-auto mt-4">
+          <table className="min-w-full bg-white border border-gray-200 rounded-lg">
+            <thead>
+              <tr className="bg-gray-100 text-sm text-gray-700">
+                <th className="px-4 py-2 border">Kode Kecamatan</th>
+                <th className="px-4 py-2 border">Nama Kecamatan</th>
+                <th className="px-4 py-2 border text-center">🎯 Target</th>
+                <th className="px-4 py-2 border text-center">✅ Realisasi (Approve)</th>
+              </tr>
+            </thead>
+            <tbody>
+              {rekapKecamatan.map((row) => (
+                <tr key={row.code} className="text-sm text-gray-800 text-center">
+                  <td className="border px-4 py-2">{row.code}</td>
+                  <td className="border px-4 py-2 text-left">{row.name}</td>
+                  <td className="border px-4 py-2">{row.target}</td>
+                  <td className="border px-4 py-2">{row.realisasi}</td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
+        </div>
+        */}
 
         {/* === Filter Pemeriksa & Pemeta === */}
         <div className="grid grid-cols-3 gap-4">
