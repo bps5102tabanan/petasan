@@ -18,6 +18,7 @@ import { supabase } from "@/lib/supabaseClient";
 import dayjs from "dayjs";
 import timezone from "dayjs/plugin/timezone";
 import utc from "dayjs/plugin/utc";
+import axios from "axios";
 
 dayjs.extend(utc);
 dayjs.extend(timezone);
@@ -39,6 +40,13 @@ type InformasiSLS = {
   catatan?: string;
 };
 
+type TargetSLS = {
+  id: string;
+  idsls: string;
+  tanggal: string; // e.g. "15/08/2025"
+  target: number | string;
+};
+
 type ChartRow = {
   code: string;
   name: string;
@@ -46,6 +54,12 @@ type ChartRow = {
   submit?: number;
   proses: number;
   belum: number;
+};
+
+type MetabaseSLSData = {
+  id_kec: string;         // dari index 0 (sebenarnya index 1 di array)
+  nama_kec: string;       // dari index 2
+  persentase_eform: number; // dari index 13
 };
 
 const StyledSchedulerFrame = styled.div`
@@ -57,12 +71,57 @@ const StyledSchedulerFrame = styled.div`
   overflow: hidden;
 `;
 
+const totalTargetMap: Record<string, number> = {
+  "5102010": 59,
+  "5102011": 71,
+  "5102012": 72,
+  "5102020": 90,
+  "5102030": 82,
+  "5102040": 106,
+  "5102050": 71,
+  "5102060": 70,
+  "5102070": 132,
+  "5102080": 71,
+};
+
 const getIdKec = (id: string | number) => String(id).slice(0, 7);
 const getIdDesa = (id: string | number) => String(id).slice(0, 10);
 const sortByCode = (a: string, b: string) => parseInt(a) - parseInt(b);
 
+const parseTargetDate = (tanggal?: string) => {
+  if (!tanggal) return null;
+  if (tanggal.includes("/")) {
+    const parts = tanggal.split("/");
+    if (parts.length === 3) {
+      const [d, m, y] = parts;
+      const iso = `${y}-${m.padStart(2, "0")}-${d.padStart(2, "0")}`;
+      return dayjs(iso).tz("Asia/Makassar").startOf("day");
+    }
+  }
+  return dayjs(tanggal).tz("Asia/Makassar").startOf("day");
+};
+
+const fetchMetabaseData = async (): Promise<MetabaseSLSData[]> => {
+  try {
+    const response = await axios.get('/api/metabase')
+    const kecamatanRows = response.data.data.rows.slice(15, 25)
+    
+    return kecamatanRows.map((row: never[]) => ({
+      id_kec: String(row[1]).trim(),
+      nama_kec: String(row[2]).trim().toUpperCase(),
+      persentase_eform: Math.round(row[13] * 100 * 100) / 100
+    }))
+  } catch (error) {
+    console.error("Error fetching Metabase data:", error)
+    return []
+  }
+}
+
+
 export default function DashboardWithChartAndScheduler() {
   const [data, setData] = useState<InformasiSLS[]>([]);
+  const [targetData, setTargetData] = useState<TargetSLS[]>([]);
+  const [metabaseData, setMetabaseData] = useState<MetabaseSLSData[]>([]);
   const [filterKecamatan, setFilterKecamatan] = useState("");
   const [filterPemeriksa, setFilterPemeriksa] = useState("");
   const [filterPemeta, setFilterPemeta] = useState("");
@@ -70,19 +129,30 @@ export default function DashboardWithChartAndScheduler() {
   const [isLoading, setIsLoading] = useState(false);
   const router = useRouter();
 
-  // ✅ Ambil data dari Supabase
   useEffect(() => {
-    const fetchData = async () => {
+    const fetchAllData = async () => {
       setIsLoading(true);
-      const { data: hasil, error } = await supabase.from("informasiSLS").select("*");
-      if (error) console.error(error);
-      else setData(hasil as InformasiSLS[]);
-      setIsLoading(false);
+      try {
+        const [metabaseResult, informasiResult, targetResult] = await Promise.all([
+          fetchMetabaseData(),
+          supabase.from("informasiSLS").select("*"),
+          supabase.from("targetSLS").select("id, idsls, tanggal, target")
+        ]);
+
+        setMetabaseData(metabaseResult);
+        if (informasiResult.error) console.error("informasiSLS fetch error:", informasiResult.error);
+        else setData(informasiResult.data as InformasiSLS[]);
+        if (targetResult.error) console.error("targetSLS fetch error:", targetResult.error);
+        else setTargetData((targetResult.data as TargetSLS[]) || []);
+      } catch (error) {
+        console.error("Error fetching data:", error);
+      } finally {
+        setIsLoading(false);
+      }
     };
-    fetchData();
+    fetchAllData();
   }, []);
 
-  // ✅ Daftar Kecamatan
   const kecamatanList = useMemo(() => {
     const map = new Map<string, string>();
     data.forEach((d) => {
@@ -95,12 +165,9 @@ export default function DashboardWithChartAndScheduler() {
   }, [data]);
 
   const filteredData = useMemo(() => {
-    return filterKecamatan
-      ? data.filter((d) => d.kecamatan === filterKecamatan)
-      : data;
+    return filterKecamatan ? data.filter((d) => d.kecamatan === filterKecamatan) : data;
   }, [data, filterKecamatan]);
 
-  // ✅ Data untuk Bar Chart
   const chartData: ChartRow[] = useMemo(() => {
     const makeRow = (name: string, approve: number, submit: number, proses: number, belum: number, total: number) => ({
       name,
@@ -112,10 +179,10 @@ export default function DashboardWithChartAndScheduler() {
     });
 
     if (filterKecamatan) {
-      const desaMap: Record<string, { approve: number, submit: number; proses: number; belum: number; total: number }> = {};
+      const desaMap: Record<string, { approve: number; submit: number; proses: number; belum: number; total: number }> = {};
       filteredData.forEach((row) => {
         const code = getIdDesa(row.id);
-        if (!desaMap[code]) desaMap[code] = { approve: 0, submit:0, proses: 0, belum: 0, total: 0 };
+        if (!desaMap[code]) desaMap[code] = { approve: 0, submit: 0, proses: 0, belum: 0, total: 0 };
         desaMap[code].total++;
         if (row.status === "Approve") desaMap[code].approve++;
         else if (row.status === "Submit") desaMap[code].submit++;
@@ -127,10 +194,10 @@ export default function DashboardWithChartAndScheduler() {
         makeRow(filteredData.find((d) => getIdDesa(d.id) === code)?.desa || code, v.approve, v.submit, v.proses, v.belum, v.total)
       );
     } else {
-      const kecMap: Record<string, { approve: number, submit: number; proses: number; belum: number; total: number }> = {};
+      const kecMap: Record<string, { approve: number; submit: number; proses: number; belum: number; total: number }> = {};
       data.forEach((row) => {
         const code = getIdKec(row.id);
-        if (!kecMap[code]) kecMap[code] = { approve: 0, submit:0, proses: 0, belum: 0, total: 0 };
+        if (!kecMap[code]) kecMap[code] = { approve: 0, submit: 0, proses: 0, belum: 0, total: 0 };
         kecMap[code].total++;
         if (row.status === "Approve") kecMap[code].approve++;
         else if (row.status === "Submit") kecMap[code].submit++;
@@ -144,10 +211,7 @@ export default function DashboardWithChartAndScheduler() {
     }
   }, [data, filteredData, filterKecamatan]);
 
-  const pemeriksaList = useMemo(
-    () => Array.from(new Set(data.map((d) => d.pemeriksa))).filter(Boolean),
-    [data]
-  );
+  const pemeriksaList = useMemo(() => Array.from(new Set(data.map((d) => d.pemeriksa))).filter(Boolean), [data]);
 
   const pemetaList = useMemo(() => {
     return Array.from(
@@ -159,7 +223,6 @@ export default function DashboardWithChartAndScheduler() {
     ).filter(Boolean);
   }, [data, filterPemeriksa]);
 
-  // ✅ SchedulerData dengan tipe yang aman
   const schedulerData: SchedulerData = useMemo(() => {
     if (!appliedFilter) return [];
 
@@ -174,29 +237,27 @@ export default function DashboardWithChartAndScheduler() {
     filtered.forEach((row) => {
       const key = row.sls || "Tanpa Nama SLS";
 
-      // ✅ Pastikan label.title & subtitle selalu string
       if (!groupMap[key]) {
         groupMap[key] = {
           id: key,
           label: {
             icon: "",
             title: row.sls ?? "Tanpa Nama SLS",
-            subtitle: `${row.pemeta || "-"}`
+            subtitle: `${row.pemeta || "-"}`,
           },
-          data: []
+          data: [],
         };
       }
 
-      // ✅ Hanya tambahkan timeline jika ada tgl_awal & tgl_akhir
       if (row.tgl_awal && row.tgl_akhir) {
         const start = new Date(row.tgl_awal);
         const end = new Date(row.tgl_akhir);
 
         const statusColorMap: Record<string, string> = {
-          Belum: "rgb(239,68,68)",    // merah
-          Proses: "rgb(234,179,8)",   // kuning
-          Submit: "rgb(59,130,246)",  // biru
-          Approve: "rgb(16,185,129)", // hijau
+          Belum: "rgb(239,68,68)",
+          Proses: "rgb(234,179,8)",
+          Submit: "rgb(59,130,246)",
+          Approve: "rgb(16,185,129)",
         };
 
         groupMap[key].data.push({
@@ -213,7 +274,7 @@ export default function DashboardWithChartAndScheduler() {
           ].join("\n"),
           description: row.status ?? "-",
           occupancy: 0,
-          bgColor: statusColorMap[row.status ?? "Belum"] ?? "rgb(107,114,128)", // default abu-abu
+          bgColor: statusColorMap[row.status ?? "Belum"] ?? "rgb(107,114,128)",
         });
       }
     });
@@ -225,41 +286,40 @@ export default function DashboardWithChartAndScheduler() {
     });
   }, [appliedFilter, data]);
 
-  // Hitung target dan realisasi per kecamatan
-const rekapKecamatan = useMemo(() => {
-  const kecMap: Record<string, { name: string; target: number; realisasi: number }> = {};
+  const rekapKecamatan = useMemo(() => {
+    const targetToday = targetData.filter((t) => {
+      const pd = parseTargetDate(t.tanggal);
+      return pd ? pd.isSame(now, "day") : false;
+    });
 
-  data.forEach((row) => {
-    const kode = getIdKec(row.id);
-    const nama = row.kecamatan || kode;
+    const targetMap: Record<string, number> = {};
+    targetToday.forEach((t) => {
+      const kodeKec = getIdKec(t.idsls);
+      const val = Number(t.target || 0);
+      targetMap[kodeKec] = (targetMap[kodeKec] || 0) + val;
+    });
 
-    if (!kecMap[kode]) {
-      kecMap[kode] = { name: nama, target: 0, realisasi: 0 };
-    }
+    const realisasiMap: Record<string, number> = {};
+    data.forEach((row) => {
+      const kodeKec = getIdKec(row.id);
+      if (row.status === "Approve" || row.status === "Submit") {
+        realisasiMap[kodeKec] = (realisasiMap[kodeKec] || 0) + 1;
+      }
+    });
 
-    // ✅ Hitung target: tgl_akhir ≤ hari ini (UTC+8)
-    if (
-      row.tgl_akhir &&
-      (dayjs(row.tgl_akhir).isSame(now) || dayjs(row.tgl_akhir).isBefore(now))
-    ) {
-      kecMap[kode].target += 1;
-    }
+    const allKode = Array.from(new Set([...Object.keys(targetMap), ...Object.keys(realisasiMap)])).sort((a, b) => parseInt(a) - parseInt(b));
 
-    // ✅ Hitung realisasi: status === Approve
-    if (row.status === "Approve") {
-      kecMap[kode].realisasi += 1;
-    }
-  });
-
-  return Object.entries(kecMap)
-    .sort(([a], [b]) => parseInt(a) - parseInt(b))
-    .map(([code, v]) => ({ code, ...v }));
-}, [data]);
+    return allKode.map((kode) => ({
+      code: kode,
+      name: data.find((d) => getIdKec(d.id) === kode)?.kecamatan || `Kecamatan ${kode}`,
+      target: targetMap[kode] || 0,
+      realisasi: realisasiMap[kode] || 0,
+    }));
+  }, [data, targetData]);
 
   return (
     <main className="flex flex-col items-center bg-gray-50 p-6 space-y-8 min-h-screen">
       <div className="max-w-6xl w-full bg-white shadow-lg rounded-2xl p-6 space-y-6">
-        {/* 🔙 Tombol kembali */}
         <button
           onClick={() => router.push("/")}
           className="mb-4 px-4 py-2 rounded-lg bg-gray-200 hover:bg-gray-300 text-gray-700 flex items-center gap-2"
@@ -270,7 +330,6 @@ const rekapKecamatan = useMemo(() => {
           📊 Dashboard Progress & 🗓 Scheduler
         </h1>
 
-        {/* === Filter Kecamatan === */}
         <div className="flex items-center gap-4">
           <label className="text-gray-700 font-medium">Filter Kecamatan:</label>
           <select
@@ -287,19 +346,15 @@ const rekapKecamatan = useMemo(() => {
           </select>
         </div>
 
-        {/* === Bar Chart === */}
         <div className="bg-gray-50 rounded-lg p-4 border">
           <ResponsiveContainer width="100%" height={400}>
             <BarChart data={chartData} margin={{ top: 20, right: 20, bottom: 40 }}>
               <XAxis dataKey="name" tick={{ fontSize: 10 }} />
               <YAxis domain={[0, 100]} tickFormatter={(v) => `${v}%`} />
               <Tooltip
-                formatter={(value: number | string | (number | string)[] | undefined) => {
-                  if (Array.isArray(value)) {
-                    return value.map((v) => (typeof v === "number" ? `${v.toFixed(1)}%` : v)).join(", ");
-                  }
-                  return typeof value === "number" ? `${value.toFixed(1)}%` : value;
-                }}
+                formatter={(value: number) =>
+                  typeof value === "number" ? `${value.toFixed(1)}%` : value
+                }
               />
               <Legend />
               <Bar dataKey="approve" stackId="a" fill="#10b981" name="Approve" />
@@ -310,34 +365,48 @@ const rekapKecamatan = useMemo(() => {
           </ResponsiveContainer>
         </div>
 
-        {/* === Tabel Rekap Target dan Realisasi === */}
-        {/*}
-        
         <div className="overflow-x-auto mt-4">
           <table className="min-w-full bg-white border border-gray-200 rounded-lg">
             <thead>
               <tr className="bg-gray-100 text-sm text-gray-700">
                 <th className="px-4 py-2 border">Kode Kecamatan</th>
                 <th className="px-4 py-2 border">Nama Kecamatan</th>
-                <th className="px-4 py-2 border text-center">🎯 Target</th>
-                <th className="px-4 py-2 border text-center">✅ Realisasi (Approve)</th>
+                <th className="px-4 py-2 border text-center">Total Target</th>
+                <th className="px-4 py-2 border text-center">Target Hari ini</th>
+                <th className="px-4 py-2 border text-center">Realisasi (PETASAN)</th>
+                <th className="px-4 py-2 border text-center">% PETASAN</th>
+                <th className="px-4 py-2 border text-center">% eForm</th>
               </tr>
             </thead>
             <tbody>
-              {rekapKecamatan.map((row) => (
-                <tr key={row.code} className="text-sm text-gray-800 text-center">
-                  <td className="border px-4 py-2">{row.code}</td>
-                  <td className="border px-4 py-2 text-left">{row.name}</td>
-                  <td className="border px-4 py-2">{row.target}</td>
-                  <td className="border px-4 py-2">{row.realisasi}</td>
-                </tr>
-              ))}
+             {rekapKecamatan.map((row) => {
+                const totalTarget = totalTargetMap[row.code] || 0;
+                const percentagePetasan = totalTarget > 0 
+                  ? ((row.realisasi / totalTarget) * 100).toFixed(1) 
+                  : '0.0';
+                
+                // Cari data eForm berdasarkan kode kecamatan
+                const metabaseRow = metabaseData.find(item => item.id_kec === row.code);
+                const percentageEform = metabaseRow?.persentase_eform || 0;
+
+                return (
+                  <tr key={row.code} className="text-sm text-gray-800 text-center">
+                    <td className="border px-4 py-2">{row.code}</td>
+                    <td className="border px-4 py-2 text-left">{row.name}</td>
+                    <td className="border px-4 py-2">{totalTarget}</td>
+                    <td className="border px-4 py-2">{row.target}</td>
+                    <td className="border px-4 py-2">{row.realisasi}</td>
+                    <td className="border px-4 py-2">{percentagePetasan}%</td>
+                    <td className="border px-4 py-2">
+                      {metabaseRow ? `${percentageEform}%` : 'N/A'}
+                    </td>
+                  </tr>
+                );
+              })}
             </tbody>
           </table>
         </div>
-        */}
 
-        {/* === Filter Pemeriksa & Pemeta === */}
         <div className="grid grid-cols-3 gap-4">
           <div>
             <label className="text-sm text-gray-700">Pemeriksa</label>
@@ -384,7 +453,6 @@ const rekapKecamatan = useMemo(() => {
           </div>
         </div>
 
-        {/* === Scheduler === */}
         {appliedFilter && schedulerData.length > 0 && (
           <div className="bg-white shadow rounded-xl border p-4">
             <h3 className="text-lg font-semibold text-gray-700 mb-4">
@@ -395,14 +463,12 @@ const rekapKecamatan = useMemo(() => {
                 data={schedulerData}
                 isLoading={isLoading}
                 onTileClick={(item) => alert(`${item.subtitle}`)}
-                
                 config={{
                   zoom: 1,
                   maxRecordsPerPage: 15,
                   includeTakenHoursOnWeekendsInDayView: true,
                   showTooltip: false,
                   filterButtonState: -1,
-                  
                 }}
               />
             </StyledSchedulerFrame>
