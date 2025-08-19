@@ -16,7 +16,7 @@ export default function Home() {
           <br /> 
         </p>
 
-        {/* Tombol navigasi */}
+        {/* Tombol navigasi utama */}
         <div className="flex flex-col sm:flex-row justify-center gap-4 mt-6">
           <Link
             href="/form"
@@ -32,6 +32,22 @@ export default function Home() {
           </Link>
         </div>
 
+        {/* Tombol navigasi tambahan */}
+        <div className="flex flex-col sm:flex-row justify-center gap-4">
+          <Link
+            href="/cek"
+            className="flex-1 bg-purple-500 hover:bg-purple-600 text-white py-3 rounded-lg font-medium shadow"
+          >
+            🔍 Periksa Eform
+          </Link>
+          <Link
+            href="/cek_pemeta"
+            className="flex-1 bg-orange-500 hover:bg-orange-600 text-white py-3 rounded-lg font-medium shadow"
+          >
+            📊 Periksa Muatan Pemeta
+          </Link>
+        </div>
+
         {/* Info tambahan dalam card kecil */}
         <div className="mt-6 text-left bg-gray-100 rounded-lg p-4">
           <h2 className="text-lg font-semibold mb-2 text-black">ℹ️ Informasi Singkat</h2>
@@ -40,6 +56,8 @@ export default function Home() {
             <li>Anda bisa klik <em>Edit</em> untuk mengedit data.</li>
             <li>Anda bisa klik <em>View</em> untuk melihat detail data.</li>
             <li>Halaman <strong>Dashboard</strong> menampilkan progress/capaian pendataan lapangan.</li>
+            <li>Halaman <strong>Periksa Eform</strong> untuk memverifikasi kelengkapan form.</li>
+            <li>Halaman <strong>Periksa Muatan Pemeta</strong> untuk melihat distribusi muatan kerja pemeta.</li>
           </ul>
         </div>
       </div>
