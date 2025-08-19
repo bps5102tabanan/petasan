@@ -148,6 +148,11 @@ export default function FormPage() {
           tgl_awal: updated.tgl_awal,
           tgl_akhir: updated.tgl_akhir,
           catatan: updated.catatan,
+          perubahan: updated.perubahan,
+          memperbesar: updated.memperbesar,
+          memperkecil: updated.memperkecil,
+          menerima: updated.menerima,
+          cetak: updated.cetak
         })
         .eq("id", updated.id);
 

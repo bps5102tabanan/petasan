@@ -16,6 +16,11 @@ export type InformasiSLS = {
   tgl_akhir?: string;
   catatan?: string;
   link?: string | null;
+  perubahan?: boolean;
+  memperbesar?: boolean;
+  memperkecil?: boolean;
+  menerima?: boolean;
+  cetak?: boolean;
 };
 
 export type SegmenRow = {
@@ -40,7 +45,14 @@ export default function ModalEdit({ data, onClose, onSave }: ModalEditProps) {
     const fetchSegmen = async () => {
       if (!data) return;
 
-      setFormData({ ...data });
+      setFormData({ 
+        ...data,
+        perubahan: data.perubahan || false,
+        memperbesar: data.memperbesar || false,
+        memperkecil: data.memperkecil || false,
+        menerima: data.menerima || false,
+        cetak: data.cetak || false
+      });
       setCurrentPage(1);
 
       const { data: segmenData, error } = await supabase
@@ -110,7 +122,7 @@ export default function ModalEdit({ data, onClose, onSave }: ModalEditProps) {
   const isInvalidJumlah =
     jumlahSub > 0 && jumlahSegmen > 0 && jumlahSub > jumlahSegmen;
 
-  const handleChange = (field: keyof InformasiSLS, value: string | number) => {
+  const handleChange = (field: keyof InformasiSLS, value: string | number | boolean) => {
     setFormData((prev) => (prev ? { ...prev, [field]: value } : prev));
   };
 
@@ -160,10 +172,18 @@ export default function ModalEdit({ data, onClose, onSave }: ModalEditProps) {
     (msgArr) => msgArr.length > 0 // kalau ada minimal 1 error
   );
 
-
   const handleSubmit = () => {
-    if (formData && !hasInvalidSegmen) {
-      onSave(formData, segmenList);
+      if (formData && !hasInvalidSegmen) {
+      // Pastikan semua field termasuk boolean dikirim
+      const completeData = {
+        ...formData,
+        perubahan: formData.perubahan || false,
+        memperbesar: formData.memperbesar || false,
+        memperkecil: formData.memperkecil || false,
+        menerima: formData.menerima || false,
+        cetak: formData.cetak || false
+      };
+      onSave(completeData, segmenList);
     }
   };
 
@@ -281,7 +301,6 @@ export default function ModalEdit({ data, onClose, onSave }: ModalEditProps) {
               <div>
                 <label className="text-sm font-medium text-gray-700">Jumlah Sub</label>
                 <div className="mt-1 flex rounded-md border border-gray-300 bg-white overflow-hidden h-10">
-                  {/* Tombol minus */}
                   <button
                     type="button"
                     onClick={() =>
@@ -294,13 +313,9 @@ export default function ModalEdit({ data, onClose, onSave }: ModalEditProps) {
                   >
                     –
                   </button>
-
-                  {/* Angka di tengah */}
                   <div className="flex-1 flex items-center justify-center text-sm text-gray-800">
                     {formData.jumlah_sub ?? 0}
                   </div>
-
-                  {/* Tombol plus */}
                   <button
                     type="button"
                     onClick={() =>
@@ -315,7 +330,6 @@ export default function ModalEdit({ data, onClose, onSave }: ModalEditProps) {
               <div>
                 <label className="text-sm font-medium text-gray-700">Jumlah Segmen</label>
                 <div className="mt-1 flex rounded-md border border-gray-300 bg-white overflow-hidden h-10">
-                  {/* Tombol minus */}
                   <button
                     type="button"
                     onClick={() =>
@@ -328,13 +342,9 @@ export default function ModalEdit({ data, onClose, onSave }: ModalEditProps) {
                   >
                     –
                   </button>
-
-                  {/* Angka di tengah */}
                   <div className="flex-1 flex items-center justify-center text-sm text-gray-800">
                     {formData.jumlah_segmen ?? 0}
                   </div>
-
-                  {/* Tombol plus */}
                   <button
                     type="button"
                     onClick={() =>
@@ -346,24 +356,95 @@ export default function ModalEdit({ data, onClose, onSave }: ModalEditProps) {
                   </button>
                 </div>
               </div>
-              
             </div>
+
             <div>
-                <label className="text-sm font-medium text-gray-700">Catatan</label>
-                <textarea
-                  value={formData.catatan ?? ""}
-                  onChange={(e) => handleChange("catatan", e.target.value)}
-                  rows={3}
-                  placeholder="Tulis catatan tambahan di sini..."
-                  className="w-full mt-1 rounded-md border border-gray-300 text-gray-800 text-sm px-3 py-2"
-                />
-              </div>
+              <label className="text-sm font-medium text-gray-700">Catatan</label>
+              <textarea
+                value={formData.catatan ?? ""}
+                onChange={(e) => handleChange("catatan", e.target.value)}
+                rows={3}
+                placeholder="Tulis catatan tambahan di sini..."
+                className="w-full mt-1 rounded-md border border-gray-300 text-gray-800 text-sm px-3 py-2"
+              />
+            </div>
 
             {isInvalidJumlah && (
               <p className="text-red-500 text-sm mt-1">
                 ⚠️ Jumlah sub tidak boleh lebih besar dari jumlah segmen
               </p>
             )}
+
+            {/* ✅ CHECKLIST SECTION */}
+            <div className="space-y-3">
+              <label className="text-sm font-medium text-gray-700">Keterangan Peta:</label>
+              <div className="space-y-3">
+                {/* Item 1 */}
+                <div className="flex items-center justify-between">
+                  <span className="text-sm text-gray-700 flex-1">
+                    Apakah ada perubahan batas SLS?
+                  </span>
+                  <input
+                    type="checkbox"
+                    checked={formData.perubahan || false}
+                    onChange={(e) => handleChange("perubahan", e.target.checked)}
+                    className="ml-2 rounded border-gray-300 text-blue-600 focus:ring-blue-500"
+                  />
+                </div>
+
+                {/* Item 2 */}
+                <div className="flex items-center justify-between">
+                  <span className="text-sm text-gray-700 flex-1">
+                    Apakah perlu memperbesar peta?
+                  </span>
+                  <input
+                    type="checkbox"
+                    checked={formData.memperbesar || false}
+                    onChange={(e) => handleChange("memperbesar", e.target.checked)}
+                    className="ml-2 rounded border-gray-300 text-blue-600 focus:ring-blue-500"
+                  />
+                </div>
+
+                {/* Item 3 */}
+                <div className="flex items-center justify-between">
+                  <span className="text-sm text-gray-700 flex-1">
+                    Apakah perlu memperkecil peta?
+                  </span>
+                  <input
+                    type="checkbox"
+                    checked={formData.memperkecil || false}
+                    onChange={(e) => handleChange("memperkecil", e.target.checked)}
+                    className="ml-2 rounded border-gray-300 text-blue-600 focus:ring-blue-500"
+                  />
+                </div>
+
+                {/* Item 4 */}
+                <div className="flex items-center justify-between">
+                  <span className="text-sm text-gray-700 flex-1">
+                    Apakah sudah cetak ulang peta dari kantor dan tidak ada kesalahan lagi?
+                  </span>
+                  <input
+                    type="checkbox"
+                    checked={formData.menerima || false}
+                    onChange={(e) => handleChange("menerima", e.target.checked)}
+                    className="ml-2 rounded border-gray-300 text-blue-600 focus:ring-blue-500"
+                  />
+                </div>
+
+                {/* Item 5 */}
+                <div className="flex items-center justify-between">
+                  <span className="text-sm text-gray-700 flex-1">
+                    Apakah perlu cetak ulang peta lagi?
+                  </span>
+                  <input
+                    type="checkbox"
+                    checked={formData.cetak || false}
+                    onChange={(e) => handleChange("cetak", e.target.checked)}
+                    className="ml-2 rounded border-gray-300 text-blue-600 focus:ring-blue-500"
+                  />
+                </div>
+              </div>
+            </div>
           </div>
         )}
 

@@ -15,6 +15,7 @@ type InformasiSLS = {
   pemeta: string;
   jumlah_sub: number;
   jumlah_segmen: number;
+  catatan?: string;
 };
 
 type InformasiSubSLS = {
@@ -48,6 +49,7 @@ type CombinedData = {
   estimasi_muatan?: number;
   muatan_petasan?: number;
   muatan_eform?: number;
+  catatan?: string;
 };
 
 export default function MetabaseTable() {
@@ -104,6 +106,7 @@ export default function MetabaseTable() {
             estimasi_muatan: dbAwal?.estimasi_muatan,
             muatan_petasan: subSlsGrouped[sls.id] ?? 0,
             muatan_eform: metabaseMatch?.muatan_eform,
+            catatan: sls.catatan || "",
           };
         });
 
@@ -208,7 +211,7 @@ export default function MetabaseTable() {
   const fetchInformasiSLS = async (): Promise<InformasiSLS[]> => {
     const { data, error } = await supabase
       .from("informasiSLS")
-      .select("id, kecamatan, desa, sls, pemeriksa, pemeta, jumlah_sub, jumlah_segmen");
+      .select("id, kecamatan, desa, sls, pemeriksa, pemeta, jumlah_sub, jumlah_segmen, catatan");
     if (error) {
       console.error("Error fetch informasiSLS:", error);
       return [];
@@ -425,6 +428,7 @@ export default function MetabaseTable() {
                 <th className="px-4 py-3">Estimasi Muatan</th>
                 <th className="px-4 py-3">Muatan Petasan</th>
                 <th className="px-4 py-3">Muatan Eform</th>
+                <th className="px-4 py-3">Catatan</th>
               </tr>
             </thead>
             <tbody className="divide-y divide-gray-200">
@@ -482,6 +486,7 @@ export default function MetabaseTable() {
                   >
                     {row.muatan_eform ?? "-"}
                   </td>
+                  <td className="px-4 py-3">{row.catatan}</td>
                 </tr>
               ))}
 
