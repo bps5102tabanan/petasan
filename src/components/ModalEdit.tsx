@@ -395,7 +395,7 @@ export default function ModalEdit({ data, onClose, onSave }: ModalEditProps) {
                 {/* Item 2 */}
                 <div className="flex items-center justify-between">
                   <span className="text-sm text-gray-700 flex-1">
-                    Apakah perlu memperbesar peta?
+                    Apakah perlu memperbesar peta? (untuk tampilan lebih mendetail)
                   </span>
                   <input
                     type="checkbox"
@@ -408,7 +408,7 @@ export default function ModalEdit({ data, onClose, onSave }: ModalEditProps) {
                 {/* Item 3 */}
                 <div className="flex items-center justify-between">
                   <span className="text-sm text-gray-700 flex-1">
-                    Apakah perlu memperkecil peta?
+                    Apakah perlu memperkecil peta? (karena pergeseran batas cukup jauh)
                   </span>
                   <input
                     type="checkbox"
@@ -421,7 +421,7 @@ export default function ModalEdit({ data, onClose, onSave }: ModalEditProps) {
                 {/* Item 4 */}
                 <div className="flex items-center justify-between">
                   <span className="text-sm text-gray-700 flex-1">
-                    Apakah sudah cetak ulang peta dari kantor dan tidak ada kesalahan lagi?
+                    Apakah Anda sudah menerima cetakan ulang peta terbaru dari kantor, dan peta tersebut sudah benar tanpa kesalahan?
                   </span>
                   <input
                     type="checkbox"
@@ -434,7 +434,7 @@ export default function ModalEdit({ data, onClose, onSave }: ModalEditProps) {
                 {/* Item 5 */}
                 <div className="flex items-center justify-between">
                   <span className="text-sm text-gray-700 flex-1">
-                    Apakah perlu cetak ulang peta lagi?
+                    Setelah menerima cetakan ulang peta, apakah masih diperlukan pencetakan ulang lagi karena ada kekeliruan atau perubahan tambahan?
                   </span>
                   <input
                     type="checkbox"
