@@ -4,16 +4,16 @@ export default function Home() {
   return (
     <main className="flex items-center justify-center min-h-screen bg-gray-50 p-6">
       <div className="max-w-xl w-full bg-white shadow-lg rounded-2xl p-6 text-center space-y-6">
-        <h1 className="text-3xl font-bold text-gray-800">
-          💣 PETASAN
-        </h1>
+        <h1 className="text-3xl font-bold text-gray-800">💣 PETASAN</h1>
+
         <p className="text-gray-600 leading-relaxed">
-          Selamat datang di Aplikasi Pelaporan Wilkerstat se-Kabupaten Tabanan 
-          <span className="font-semibold"> (PETASAN)</span>.  
+          Selamat datang di Aplikasi Pelaporan Wilkerstat se-Kabupaten Tabanan
+          <span className="font-semibold"> (PETASAN)</span>.
           <br />
           <br />
-            Pelaporan ini dilakukan oleh Petugas Pemeriksa dan Petugas Pemeta <span className="font-semibold">setiap hari</span> melalui Form.
-          <br /> 
+          Pelaporan ini dilakukan oleh Petugas Pemeriksa dan Petugas Pemeta{" "}
+          <span className="font-semibold">setiap hari</span> melalui Form.
+          <br />
         </p>
 
         {/* Tombol navigasi utama */}
@@ -48,9 +48,23 @@ export default function Home() {
           </Link>
         </div>
 
+        {/* Submenu tambahan - buka spreadsheet di tab baru */}
+        <div className="flex flex-col sm:flex-row justify-center gap-4">
+          <a
+            href="https://docs.google.com/spreadsheets/d/1vWWNSHmSF-BI0QkyEoKV_lv3XhXMjElI/edit?usp=sharing"
+            target="_blank"
+            rel="noopener noreferrer"
+            className="flex-1 bg-red-500 hover:bg-red-600 text-white py-3 rounded-lg font-medium shadow"
+          >
+            🧩 Pengecekan Anomali
+          </a>
+        </div>
+
         {/* Info tambahan dalam card kecil */}
         <div className="mt-6 text-left bg-gray-100 rounded-lg p-4">
-          <h2 className="text-lg font-semibold mb-2 text-black">ℹ️ Informasi Singkat</h2>
+          <h2 className="text-lg font-semibold mb-2 text-black">
+            ℹ️ Informasi Singkat
+          </h2>
           <ul className="list-disc list-inside text-gray-700 text-sm space-y-1">
             <li>Halaman <strong>Form</strong> menampilkan tabel data SLS dan Non SLS.</li>
             <li>Anda bisa klik <em>Edit</em> untuk mengedit data.</li>
@@ -58,6 +72,7 @@ export default function Home() {
             <li>Halaman <strong>Dashboard</strong> menampilkan progress/capaian pendataan lapangan.</li>
             <li>Halaman <strong>Periksa Eform</strong> untuk memverifikasi kelengkapan form.</li>
             <li>Halaman <strong>Periksa Muatan Pemeta</strong> untuk melihat distribusi muatan kerja pemeta.</li>
+            <li>Halaman <strong>Pengecekan Anomali</strong> akan membuka file Google Spreadsheet berisi data anomali.</li>
           </ul>
         </div>
       </div>
