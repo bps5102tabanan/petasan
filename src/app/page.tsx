@@ -58,6 +58,14 @@ export default function Home() {
           >
             🧩 Pengecekan Anomali
           </a>
+          <a
+            href="https://docs.google.com/spreadsheets/d/1LH68yOQoSwsfh15EaoWp5JNSGUl8nQGdsUxLZ8uNHlk/edit?gid=2102606273#gid=2102606273"
+            target="_blank"
+            rel="noopener noreferrer"
+            className="flex-1 bg-teal-500 hover:bg-teal-600 text-white py-3 rounded-lg font-medium shadow"
+          >
+            📈 Dashboard Pengolahan Wilkerstat
+          </a>
         </div>
 
         {/* Info tambahan dalam card kecil */}
@@ -70,6 +78,17 @@ export default function Home() {
             <li>Anda bisa klik <em>Edit</em> untuk mengedit data.</li>
             <li>Anda bisa klik <em>View</em> untuk melihat detail data.</li>
             <li>Halaman <strong>Dashboard</strong> menampilkan progress/capaian pendataan lapangan.</li>
+            <li>
+              Halaman <strong>Dashboard Pengolahan Wilkerstat</strong> dapat diakses di{" "}
+              <a
+                href="https://docs.google.com/spreadsheets/d/1LH68yOQoSwsfh15EaoWp5JNSGUl8nQGdsUxLZ8uNHlk/edit?gid=2102606273#gid=2102606273"
+                target="_blank"
+                rel="noopener noreferrer"
+                className="text-blue-600 hover:underline font-medium"
+              >
+                tautan ini
+              </a>.
+            </li>
             <li>Halaman <strong>Periksa Eform</strong> untuk memverifikasi kelengkapan form.</li>
             <li>Halaman <strong>Periksa Muatan Pemeta</strong> untuk melihat distribusi muatan kerja pemeta.</li>
             <li>Halaman <strong>Pengecekan Anomali</strong> akan membuka file Google Spreadsheet berisi data anomali.</li>
